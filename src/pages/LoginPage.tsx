@@ -1,4 +1,5 @@
-﻿import { useNavigate } from 'react-router-dom'
+﻿import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -10,8 +11,8 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { LogIn } from 'lucide-react'
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6)
+  email: z.string().email('Enter a valid email'),
+  password: z.string().min(6, 'Password must be at least 6 characters')
 })
 
 type LoginForm = z.infer<typeof loginSchema>
@@ -19,6 +20,9 @@ type LoginForm = z.infer<typeof loginSchema>
 export default function LoginPage() {
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
+  const [loginError, setLoginError] = useState('')
+  const [loading, setLoading] = useState(false)
+
   const {
     register,
     handleSubmit,
@@ -27,9 +31,19 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema)
   })
 
-  const onSubmit = (data: LoginForm) => {
-    login(data.email, data.password)
-    navigate('/dashboard')
+  const onSubmit = async (data: LoginForm) => {
+    setLoginError('')
+    setLoading(true)
+
+    const success = await login(data.email, data.password)
+
+    setLoading(false)
+
+    if (success) {
+      navigate('/dashboard')
+    } else {
+      setLoginError('Invalid email or password')
+    }
   }
 
   return (
@@ -63,17 +77,19 @@ export default function LoginPage() {
                 <ThemeToggle />
               </div>
             </CardHeader>
+
             <CardContent className="px-8 pb-10 pt-2">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
                   <Input
                     {...register('email')}
                     type="email"
-                    placeholder="Enter Email / Mobile"
+                    placeholder="Enter Email"
                     className="w-full bg-slate-100 text-slate-900"
                   />
                   {errors.email && <p className="mt-2 text-sm text-rose-500">{errors.email.message}</p>}
                 </div>
+
                 <div>
                   <Input
                     {...register('password')}
@@ -83,12 +99,22 @@ export default function LoginPage() {
                   />
                   {errors.password && <p className="mt-2 text-sm text-rose-500">{errors.password.message}</p>}
                 </div>
-                <Button type="submit" className="w-full">Login</Button>
-                <Button variant="ghost" className="w-full text-slate-700">Forgot Password?</Button>
-                <Button variant="outline" className="w-full gap-2 text-slate-900">
+
+                {loginError && <p className="text-sm text-rose-500">{loginError}</p>}
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Logging in...' : 'Login'}
+                </Button>
+
+                <Button type="button" variant="ghost" className="w-full text-slate-700">
+                  Forgot Password?
+                </Button>
+
+                <Button type="button" variant="outline" className="w-full gap-2 text-slate-900">
                   <LogIn className="h-4 w-4" />
                   Login with Google
                 </Button>
+        
               </form>
             </CardContent>
           </Card>

@@ -8,6 +8,11 @@ import PaymentPage from './pages/PaymentPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import ReceiptPage from './pages/ReceiptPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
+import ProfilePage from './pages/ProfilePage'
+import PaymentHistoryPage from './pages/PaymentHistoryPage'
+import NoticePage from './pages/NoticePage'
+import SupportPage from './pages/SupportPage'
+
 
 function App() {
   const theme = useThemeStore((state) => state.theme)
@@ -23,8 +28,12 @@ function App() {
       <Route path="/select-months" element={<SelectMonthsPage />} />
       <Route path="/payment" element={<PaymentPage />} />
       <Route path="/payment-success" element={<PaymentSuccessPage />} />
-      <Route path="/receipt" element={<ReceiptPage />} />
+      <Route path="/receipts" element={<ReceiptPage />} />
       <Route path="/admin" element={<AdminDashboardPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/history" element={<PaymentHistoryPage />} />
+      <Route path="/notices" element={<NoticePage />} />
+      <Route path="/support" element={<SupportPage />} />
     </Routes>
   )
 }
