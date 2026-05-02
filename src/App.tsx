@@ -1,41 +1,31 @@
-import { useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
-import { useThemeStore } from '@/stores/useThemeStore'
-import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
-import SelectMonthsPage from './pages/SelectMonthsPage'
-import PaymentPage from './pages/PaymentPage'
-import PaymentSuccessPage from './pages/PaymentSuccessPage'
-import ReceiptPage from './pages/ReceiptPage'
-import AdminDashboardPage from './pages/AdminDashboardPage'
-import ProfilePage from './pages/ProfilePage'
-import PaymentHistoryPage from './pages/PaymentHistoryPage'
-import NoticePage from './pages/NoticePage'
-import SupportPage from './pages/SupportPage'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
+import ProfilePage from "./pages/ProfilePage";
+import PaymentPage from "./pages/PaymentPage";
+import PaymentHistoryPage from "./pages/PaymentHistoryPage";
+import ReceiptPage from "./pages/ReceiptPage";
+import NoticePage from "./pages/NoticePage";
+import SupportPage from "./pages/SupportPage";
+import PaymentCheckoutPage from "./pages/PaymentCheckoutPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 
-
-function App() {
-  const theme = useThemeStore((state) => state.theme)
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme
-  }, [theme])
-
+export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<LoginPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/select-months" element={<SelectMonthsPage />} />
-      <Route path="/payment" element={<PaymentPage />} />
-      <Route path="/payment-success" element={<PaymentSuccessPage />} />
-      <Route path="/receipts" element={<ReceiptPage />} />
-      <Route path="/admin" element={<AdminDashboardPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/history" element={<PaymentHistoryPage />} />
-      <Route path="/notices" element={<NoticePage />} />
-      <Route path="/support" element={<SupportPage />} />
-    </Routes>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/fee-payment" element={<PaymentPage />} />
+        <Route path="/payment-history" element={<PaymentHistoryPage />} />
+        <Route path="/receipts" element={<ReceiptPage />} />
+        <Route path="/notices" element={<NoticePage />} />
+        <Route path="/support" element={<SupportPage />} />
+        <Route path="/payment-checkout" element={<PaymentCheckoutPage />} />
+        <Route path="/payment-success" element={<PaymentSuccessPage />} />
+        <Route path="/receipts" element={<ReceiptPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
-
-export default App

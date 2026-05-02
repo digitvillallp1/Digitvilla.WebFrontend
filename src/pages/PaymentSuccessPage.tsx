@@ -1,39 +1,86 @@
-﻿import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { useFeeStore } from '@/stores/useFeeStore'
-import { useNavigate } from 'react-router-dom'
-import { CheckCircle2 } from 'lucide-react'
+﻿import { CheckCircle, Download, Home } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import UserSidebar from "../components/user-dashboard/UserSidebar";
 
 export default function PaymentSuccessPage() {
-  const navigate = useNavigate()
-  const { selectedMonths } = useFeeStore()
-
-  const transactionId = 'TXN' + Date.now()
-  const date = new Date().toLocaleDateString()
-  const time = new Date().toLocaleTimeString()
-  const totalAmount = selectedMonths.length * 500
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-slate-950 px-6 py-10 text-slate-100">
-      <div className="mx-auto max-w-md">
-        <Card className="rounded-[2rem] bg-slate-900/95 p-8 text-center shadow-2xl shadow-slate-950/40">
-          <CardContent>
-            <CheckCircle2 className="mx-auto mb-4 h-16 w-16 text-emerald-400" />
-            <h1 className="text-3xl font-bold">Payment Successful</h1>
-            <p className="mt-2 text-slate-400">Your payment has been completed successfully.</p>
-            <div className="mt-8 space-y-3 rounded-3xl bg-slate-950/80 p-5 text-left text-sm text-slate-300">
-              <div className="flex justify-between"><span>Transaction ID</span><span>{transactionId}</span></div>
-              <div className="flex justify-between"><span>Date & Time</span><span>{date} {time}</span></div>
-              <div className="flex justify-between"><span>Paid Amount</span><span>${totalAmount}</span></div>
-              <div className="flex justify-between"><span>Paid Months</span><span>{selectedMonths.join(', ')}</span></div>
+    <main className="min-h-screen w-full bg-white">
+      <div className="flex min-h-screen w-full bg-white">
+        <UserSidebar />
+
+        <section className="flex-1 px-8 py-7">
+          <div className="flex min-h-[calc(100vh-56px)] items-center justify-center rounded-[14px] border border-[#dfe4f0] bg-white p-8">
+            <div className="w-full max-w-[520px] text-center">
+              <div className="mx-auto flex h-[96px] w-[96px] items-center justify-center rounded-full bg-[#eaf8ef]">
+                <CheckCircle className="h-[58px] w-[58px] text-[#16a34a]" />
+              </div>
+
+              <h1 className="mt-6 text-[30px] font-bold text-[#07185f]">
+                Payment Successful!
+              </h1>
+
+              <p className="mt-2 text-[13px] text-[#7b8499]">
+                Your fee payment has been completed successfully
+              </p>
+
+              <div className="mt-8 rounded-[10px] border border-[#dfe4f0] bg-white p-6 text-left">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[13px] text-[#7b8499]">Amount Paid</p>
+                    <p className="text-[15px] font-bold text-[#07185f]">
+                      ₹ 6,000
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <p className="text-[13px] text-[#7b8499]">Paid Months</p>
+                    <p className="text-[15px] font-bold text-[#07185f]">
+                      Jun 2026, Jul 2026
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <p className="text-[13px] text-[#7b8499]">
+                      Transaction ID
+                    </p>
+                    <p className="text-[15px] font-bold text-[#07185f]">
+                      DVTXN2026001
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <p className="text-[13px] text-[#7b8499]">Status</p>
+                    <span className="rounded-md bg-[#eaf8ef] px-4 py-1 text-[12px] font-bold text-[#11823b]">
+                      Paid
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  className="flex h-[48px] items-center justify-center gap-2 rounded-md border border-[#25249c] bg-white text-[13px] font-bold text-[#25249c]"
+                >
+                  <Download className="h-5 w-5" />
+                  Download Receipt
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate("/dashboard")}
+                  className="flex h-[48px] items-center justify-center gap-2 rounded-md bg-[#25249c] text-[13px] font-bold text-white"
+                >
+                  <Home className="h-5 w-5" />
+                  Dashboard
+                </button>
+              </div>
             </div>
-            <div className="mt-8 grid gap-3">
-              <Button className="w-full">Download Receipt</Button>
-              <Button variant="outline" className="w-full" onClick={() => navigate('/dashboard')}>Go to Dashboard</Button>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       </div>
-    </div>
-  )
+    </main>
+  );
 }
