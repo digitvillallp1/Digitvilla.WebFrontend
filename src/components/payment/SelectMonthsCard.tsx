@@ -1,34 +1,25 @@
 import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const periods = [
-  { name: "January", status: "Paid", disabled: true },
-  { name: "February", status: "Paid", disabled: true },
-  { name: "March", status: "Paid", disabled: true },
-  { name: "April", status: "Pending", disabled: true, danger: true },
-  { name: "May", status: "Pending", disabled: true, danger: true },
-  { name: "June", status: "Pending", disabled: false },
-  { name: "July", status: "Pending", disabled: false },
-  { name: "August", status: "Pending", disabled: false },
-  { name: "September", status: "Pending", disabled: false },
-  { name: "October", status: "Pending", disabled: false },
-  { name: "November", status: "Pending", disabled: false },
-  { name: "December", status: "Pending", disabled: false },
-];
-
 import { useBillingStore } from "../../stores/useBillingStore";
 
 export default function SelectMonthsCard() {
   const navigate = useNavigate();
-  const { selectedMonths, setSelectedMonths } = useBillingStore();
+  const { billingMonths, selectedMonths, setSelectedMonths } = useBillingStore();
 
-  const togglePeriod = (period: string) => {
+  const togglePeriod = (monthName: string) => {
+    const monthData = billingMonths.find(m => m.month === monthName);
+    if (monthData?.status === 'paid') return;
+
     setSelectedMonths(
-      selectedMonths.includes(period)
-        ? selectedMonths.filter((item) => item !== period)
-        : [...selectedMonths, period]
+      selectedMonths.includes(monthName)
+        ? selectedMonths.filter((m) => m !== monthName)
+        : [...selectedMonths, monthName]
     );
   };
+
+  const totalAmount = billingMonths
+    .filter(m => selectedMonths.includes(m.month))
+    .reduce((sum, m) => sum + m.amount, 0);
 
   return (
     <div className="w-full">
@@ -54,23 +45,22 @@ export default function SelectMonthsCard() {
         </div>
 
         <div className="mt-6 grid grid-cols-6 gap-5">
-          {periods.map((period) => {
-            const selected = selectedMonths.includes(period.name);
+          {billingMonths.map((bill) => {
+            const selected = selectedMonths.includes(bill.month);
+            const isPaid = bill.status === 'paid';
 
             return (
               <button
-                key={period.name}
+                key={bill.id}
                 type="button"
-                disabled={period.disabled}
-                onClick={() => togglePeriod(period.name)}
+                disabled={isPaid}
+                onClick={() => togglePeriod(bill.month)}
                 className={`relative h-[96px] rounded-md border text-center transition ${
                   selected
                     ? "border-[#25249c] bg-[#eef0ff]"
-                    : period.disabled && period.danger
-                    ? "border-[#ffcaca] bg-[#fff0f0]"
-                    : period.disabled
-                    ? "border-[#c9efd7] bg-[#eaf8ef]"
-                    : "border-[#dfe4f0] bg-white"
+                    : isPaid
+                    ? "border-[#c9efd7] bg-[#eaf8ef] cursor-not-allowed"
+                    : "border-[#dfe4f0] bg-white hover:border-[#25249c]/30"
                 }`}
               >
                 {selected && (
@@ -78,21 +68,19 @@ export default function SelectMonthsCard() {
                 )}
 
                 <p className="text-[13px] font-bold text-[#07185f]">
-                  {period.name.substring(0, 3)}
+                  {bill.month.substring(0, 3)}
                 </p>
 
                 <p
                   className={`mt-3 text-[11px] font-semibold ${
-                    period.disabled && !period.danger
+                    isPaid
                       ? "text-[#11823b]"
-                      : period.danger
-                      ? "text-[#dc2626]"
                       : selected
                       ? "text-[#25249c]"
                       : "text-[#111827]"
                   }`}
                 >
-                  {period.status}
+                  {isPaid ? "Paid" : "Pending"}
                 </p>
               </button>
             );
@@ -101,19 +89,27 @@ export default function SelectMonthsCard() {
 
         <div className="mt-10 border-t border-[#e4e8f2] pt-6">
           <div className="flex items-center justify-between">
-            <p className="text-[13px] font-semibold text-[#07185f]">
-              Selected Periods:{" "}
-              <span className="font-medium">
-                {selectedMonths.length
-                  ? selectedMonths.map((p) => `${p} 2026`).join(", ")
-                  : "None"}
-              </span>
-            </p>
+            <div className="space-y-1">
+              <p className="text-[13px] font-semibold text-[#07185f]">
+                Selected Periods:{" "}
+                <span className="font-medium text-slate-500">
+                  {selectedMonths.length
+                    ? selectedMonths.map((p) => `${p} 2026`).join(", ")
+                    : "None"}
+                </span>
+              </p>
+              {totalAmount > 0 && (
+                <p className="text-[14px] font-bold text-[#25249c]">
+                  Total Amount: ₹{totalAmount.toLocaleString()}
+                </p>
+              )}
+            </div>
 
             <button
               type="button"
+              disabled={selectedMonths.length === 0}
               onClick={() => navigate("/payment-checkout")}
-              className="flex h-[48px] items-center gap-5 rounded-md bg-[#25249c] px-7 text-[13px] font-semibold text-white"
+              className="flex h-[48px] items-center gap-5 rounded-md bg-[#25249c] px-7 text-[13px] font-semibold text-white transition-all hover:bg-[#1a1980] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Proceed to Pay
               <ArrowRight className="h-5 w-5" />

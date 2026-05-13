@@ -1,61 +1,87 @@
-import create from 'zustand'
-import { apiClient } from "../services/apiClient";
+import create from "zustand";
+interface User {
+  id: string;
+  fullName: string;
+  email: string;
+  roleName: string;
+}
 
 interface AuthState {
   isAuthenticated: boolean;
-  user: any | null;
+  user: User | null;
   token: string | null;
   userId: string | null;
+
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   loadUserFromStorage: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  isAuthenticated: false,
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+
+export const useAuthStore = create<AuthState>((set: any) => ({  isAuthenticated: false,
   user: null,
   token: null,
   userId: null,
 
   login: async (email: string, password: string) => {
     try {
-      const data = await apiClient("/Auth/login", {
+      console.log("[LOGIN] Sending request...");
+
+      const response = await fetch(`${API_BASE_URL}/Auth/login`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+
         body: JSON.stringify({
           email,
           password,
         }),
       });
 
-      const token = data.token;
-      const user = data.user;
-      const userId = user?.id || data.userId || data.id;
+      console.log("[LOGIN] Response status:", response.status);
 
-      if (!token) {
-        console.error("Login failed: token not found in response", data);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[LOGIN ERROR]", errorText);
         return false;
       }
 
-      localStorage.setItem("digitvilla_token", token);
+      const data = await response.json();
 
-      if (user) {
-        localStorage.setItem("digitvilla_user", JSON.stringify(user));
+      console.log("[LOGIN SUCCESS]", data);
+
+      if (!data.token) {
+        console.error("Token missing");
+        return false;
       }
 
-      if (userId) {
-        localStorage.setItem("digitvilla_userId", userId);
+      localStorage.setItem("digitvilla_token", data.token);
+
+      if (data.user) {
+        localStorage.setItem(
+          "digitvilla_user",
+          JSON.stringify(data.user)
+        );
+
+        localStorage.setItem(
+          "digitvilla_userId",
+          data.user.id
+        );
       }
 
       set({
         isAuthenticated: true,
-        user: user || null,
-        token,
-        userId: userId || null,
+        user: data.user,
+        token: data.token,
+        userId: data.user?.id || null,
       });
 
       return true;
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("[LOGIN FAILED]", error);
       return false;
     }
   },
@@ -75,25 +101,15 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   loadUserFromStorage: () => {
     const token = localStorage.getItem("digitvilla_token");
-    const userString = localStorage.getItem("digitvilla_user");
+    const user = localStorage.getItem("digitvilla_user");
     const userId = localStorage.getItem("digitvilla_userId");
 
-    if (!token) return;
-
-    let user = null;
-
-    if (userString) {
-      try {
-        user = JSON.parse(userString);
-      } catch {
-        localStorage.removeItem("digitvilla_user");
-      }
-    }
+    if (!token || !user) return;
 
     set({
       isAuthenticated: true,
-      user,
       token,
+      user: JSON.parse(user),
       userId,
     });
   },

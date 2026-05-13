@@ -14,8 +14,8 @@ import {
   createRazorpayOrder,
   verifyRazorpayPayment,
 } from "../services/razorpayService";
-import { useBillingStore } from "@/stores/useBillingStore";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useBillingStore } from "../stores/useBillingStore";
+import { useAuthStore } from "../stores/useAuthStore";
 
 const PaymentCheckoutPage = () => {
   const navigate = useNavigate();
@@ -38,35 +38,55 @@ const PaymentCheckoutPage = () => {
       setIsPaying(true);
       setPaymentError("");
 
-      const monthlyPaymentStatusId = selectedBillingMonths[0]?.id || "";
-      console.log("[PAYMENT DEBUG] Starting payment flow:", { totalAmount, monthlyPaymentStatusId });
+      console.log("[PAYMENT DEBUG] Starting payment flow:", { totalAmount });
 
-      const orderResponse = await createRazorpayOrder(totalAmount, monthlyPaymentStatusId);
+      const orderResponse = await createRazorpayOrder({
+        amount: totalAmount,
+        currency: "INR",
+      });
+
       console.log("[PAYMENT DEBUG] Order created:", orderResponse);
 
+      if (!orderResponse.key || !orderResponse.orderId) {
+        throw new Error("Invalid order response from server");
+      }
+
       const options = {
-        key: orderResponse.keyId,
-        amount: orderResponse.amount * 100,
+        key: orderResponse.key,
+        amount: orderResponse.amount,
         currency: orderResponse.currency,
         name: "Digitvilla Premium",
         description: `Billing for ${selectedMonths.join(", ")}`,
         order_id: orderResponse.orderId,
 
         handler: async function (response: any) {
+          console.log("[PAYMENT DEBUG] Payment success response:", response);
+          
           try {
-           await verifyRazorpayPayment({
-  razorpayOrderId: response.razorpay_order_id,
-  razorpayPaymentId: response.razorpay_payment_id,
-  razorpaySignature: response.razorpay_signature,
-  amount: totalAmount,
-  monthlyPaymentStatusId: monthlyPaymentStatusId || undefined,
-});
+            const verifyResponse = await verifyRazorpayPayment({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              amount: totalAmount,
+            });
 
-            navigate("/payment-success");
+            console.log("[PAYMENT DEBUG] Verify response:", verifyResponse);
+
+            if (verifyResponse.success) {
+              console.log(
+                "[PAYMENT DEBUG] Payment verified successfully"
+              );
+              navigate("/payment-success");
+            } else {
+              throw new Error(
+                verifyResponse.message || "Payment verification failed"
+              );
+            }
           } catch (error: any) {
-            console.error("VERIFY ERROR:", error);
-            setPaymentError(error.message || "Payment verification failed");
-          } finally {
+            console.error("[PAYMENT DEBUG] Verification error:", error);
+            setPaymentError(
+              error.message || "Payment verification failed"
+            );
             setIsPaying(false);
           }
         },
@@ -83,6 +103,7 @@ const PaymentCheckoutPage = () => {
 
         modal: {
           ondismiss: function () {
+            console.log("[PAYMENT DEBUG] Payment modal closed");
             setIsPaying(false);
           },
         },
@@ -91,12 +112,16 @@ const PaymentCheckoutPage = () => {
       const razorpay = new (window as any).Razorpay(options);
 
       razorpay.on("payment.failed", function (response: any) {
-        setPaymentError(response.error?.description || "Payment failed");
+        console.error("[PAYMENT DEBUG] Payment failed:", response);
+        setPaymentError(
+          response.error?.description || "Payment failed"
+        );
         setIsPaying(false);
       });
 
       razorpay.open();
     } catch (error: any) {
+      console.error("[PAYMENT DEBUG] Payment error:", error);
       setPaymentError(error.message || "Something went wrong");
       setIsPaying(false);
     }
@@ -199,7 +224,7 @@ const PaymentCheckoutPage = () => {
                     >
                       <div className="flex items-center gap-3">
                         <CheckCircle2 className="h-3.5 w-3.5 text-cyan-500" />
-                        <span className="text-sm font-medium text-slate-300">{bill.month} {bill.year}</span>
+                        <span className="text-sm font-medium text-slate-300">{bill.month} 2026</span>
                       </div>
                       <span className="font-mono text-sm text-white">₹{bill.amount.toLocaleString()}</span>
                     </div>

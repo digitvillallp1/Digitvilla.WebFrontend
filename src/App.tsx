@@ -33,6 +33,7 @@ export default function App() {
         <Route path="/support" element={<SupportPage />} />
         <Route path="/payment-checkout" element={<PaymentCheckoutPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
+        
       </Routes>
     </BrowserRouter>
   );

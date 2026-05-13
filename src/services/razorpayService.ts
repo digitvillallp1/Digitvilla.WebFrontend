@@ -1,11 +1,8 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const API_BASE_URL = "http://localhost:5000/api";
 
-export interface CreateOrderResponse {
-  orderId: string;
+export interface CreateOrderRequest {
   amount: number;
-  currency: string;
-  keyId: string;
+  currency?: string;
 }
 
 export interface VerifyPaymentRequest {
@@ -13,97 +10,101 @@ export interface VerifyPaymentRequest {
   razorpayPaymentId: string;
   razorpaySignature: string;
   amount: number;
-  monthlyPaymentStatusId?: string;
 }
 
-export const createRazorpayOrder = async (
-  amount: number,
-  monthlyPaymentStatusId?: string
-): Promise<CreateOrderResponse> => {
-  const token = localStorage.getItem("digitvilla_token");
+export interface CreateOrderResponse {
+  orderId: string;
+  key: string;
+  amount: number;
+  currency: string;
+}
 
-  if (!token) {
-    throw new Error("Login token not found. Please login again.");
+export interface VerifyPaymentResponse {
+  success: boolean;
+  message: string;
+  paymentId: string;
+}
+
+function getAuthHeaders() {
+  const token =
+    localStorage.getItem("digitvilla_token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken");
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}/payments/create-order`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      amount,
-      monthlyPaymentStatusId: monthlyPaymentStatusId || null,
-    }),
-  });
+  return headers;
+}
 
-  const text = await response.text();
-
-  let data: any = {};
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      throw new Error(text);
-    }
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        data.error ||
-        `Failed to create Razorpay order. Status: ${response.status}`
+export async function createRazorpayOrder(
+  data: CreateOrderRequest
+): Promise<CreateOrderResponse> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/payments/create-order`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          amount: data.amount,
+          currency: data.currency || "INR",
+        }),
+      }
     );
-  }
 
-  return data;
-};
-
-export const verifyRazorpayPayment = async (
-  paymentData: VerifyPaymentRequest
-) => {
-  const token = localStorage.getItem("digitvilla_token");
-  const userId = localStorage.getItem("digitvilla_userId");
-
-  if (!token) {
-    throw new Error("Login token not found. Please login again.");
-  }
-
-  if (!userId) {
-    throw new Error("User ID not found. Please login again.");
-  }
-
-  const response = await fetch(`${API_BASE_URL}/payments/verify`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      ...paymentData,
-      userId,
-    }),
-  });
-
-  const text = await response.text();
-
-  let data: any = {};
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      throw new Error(text);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Create order failed:", response.status, errorText);
+      throw new Error(
+        errorText || `Failed to create order (Status: ${response.status})`
+      );
     }
-  }
 
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        data.error ||
-        `Payment verification failed. Status: ${response.status}`
+    const result = await response.json();
+    return result;
+  } catch (error: any) {
+    console.error("Create order error:", error);
+    throw error;
+  }
+}
+
+export async function verifyRazorpayPayment(
+  data: VerifyPaymentRequest
+): Promise<VerifyPaymentResponse> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/payments/verify-payment`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          razorpayOrderId: data.razorpayOrderId,
+          razorpayPaymentId: data.razorpayPaymentId,
+          razorpaySignature: data.razorpaySignature,
+          amount: data.amount,
+        }),
+      }
     );
-  }
 
-  return data;
-};
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Verify payment failed:", response.status, errorText);
+      throw new Error(
+        errorText || `Payment verification failed (Status: ${response.status})`
+      );
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error: any) {
+    console.error("Verify payment error:", error);
+    throw error;
+  }
+}
