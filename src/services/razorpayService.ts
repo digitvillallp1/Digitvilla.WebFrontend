@@ -10,6 +10,7 @@ export interface VerifyPaymentRequest {
   razorpayPaymentId: string;
   razorpaySignature: string;
   amount: number;
+  notes?: string; // ✅ added
 }
 
 export interface CreateOrderResponse {
@@ -19,10 +20,14 @@ export interface CreateOrderResponse {
   currency: string;
 }
 
+// ✅ Extra fields added for PaymentSuccess page
 export interface VerifyPaymentResponse {
   success: boolean;
   message: string;
   paymentId: string;
+  amount?: number;
+  razorpayPaymentId?: string;
+  paidAt?: string;
 }
 
 function getAuthHeaders() {
@@ -43,6 +48,7 @@ function getAuthHeaders() {
   return headers;
 }
 
+// ✅ DO NOT TOUCH — Razorpay create order
 export async function createRazorpayOrder(
   data: CreateOrderRequest
 ): Promise<CreateOrderResponse> {
@@ -69,12 +75,13 @@ export async function createRazorpayOrder(
 
     const result = await response.json();
     return result;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Create order error:", error);
     throw error;
   }
 }
 
+// ✅ DO NOT TOUCH — Razorpay verify payment
 export async function verifyRazorpayPayment(
   data: VerifyPaymentRequest
 ): Promise<VerifyPaymentResponse> {
@@ -89,6 +96,7 @@ export async function verifyRazorpayPayment(
           razorpayPaymentId: data.razorpayPaymentId,
           razorpaySignature: data.razorpaySignature,
           amount: data.amount,
+          notes: data.notes ?? "",
         }),
       }
     );
@@ -103,7 +111,7 @@ export async function verifyRazorpayPayment(
 
     const result = await response.json();
     return result;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Verify payment error:", error);
     throw error;
   }

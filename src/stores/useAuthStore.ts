@@ -1,7 +1,9 @@
 import create from "zustand";
+
 interface User {
   id: string;
   fullName: string;
+  name: string;
   email: string;
   roleName: string;
 }
@@ -11,7 +13,6 @@ interface AuthState {
   user: User | null;
   token: string | null;
   userId: string | null;
-
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   loadUserFromStorage: () => void;
@@ -20,28 +21,25 @@ interface AuthState {
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
-export const useAuthStore = create<AuthState>((set: any) => ({  isAuthenticated: false,
+export const useAuthStore = create<AuthState>((set) => ({
+  isAuthenticated: false,
   user: null,
   token: null,
   userId: null,
 
   login: async (email: string, password: string) => {
     try {
-      console.log("[LOGIN] Sending request...");
+      // Clear stale data from previous session first
+      localStorage.removeItem("digitvilla_token");
+      localStorage.removeItem("digitvilla_user");
+      localStorage.removeItem("digitvilla_userId");
+      set({ isAuthenticated: false, user: null, token: null, userId: null });
 
       const response = await fetch(`${API_BASE_URL}/Auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-
-      console.log("[LOGIN] Response status:", response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -50,7 +48,6 @@ export const useAuthStore = create<AuthState>((set: any) => ({  isAuthenticated:
       }
 
       const data = await response.json();
-
       console.log("[LOGIN SUCCESS]", data);
 
       if (!data.token) {
@@ -59,24 +56,16 @@ export const useAuthStore = create<AuthState>((set: any) => ({  isAuthenticated:
       }
 
       localStorage.setItem("digitvilla_token", data.token);
-
       if (data.user) {
-        localStorage.setItem(
-          "digitvilla_user",
-          JSON.stringify(data.user)
-        );
-
-        localStorage.setItem(
-          "digitvilla_userId",
-          data.user.id
-        );
+        localStorage.setItem("digitvilla_user", JSON.stringify(data.user));
+        localStorage.setItem("digitvilla_userId", data.user.id);
       }
 
       set({
         isAuthenticated: true,
-        user: data.user,
+        user: data.user ?? null,
         token: data.token,
-        userId: data.user?.id || null,
+        userId: data.user?.id ?? null,
       });
 
       return true;
@@ -90,27 +79,23 @@ export const useAuthStore = create<AuthState>((set: any) => ({  isAuthenticated:
     localStorage.removeItem("digitvilla_token");
     localStorage.removeItem("digitvilla_user");
     localStorage.removeItem("digitvilla_userId");
-
-    set({
-      isAuthenticated: false,
-      user: null,
-      token: null,
-      userId: null,
-    });
+    set({ isAuthenticated: false, user: null, token: null, userId: null });
   },
 
   loadUserFromStorage: () => {
     const token = localStorage.getItem("digitvilla_token");
-    const user = localStorage.getItem("digitvilla_user");
+    const userRaw = localStorage.getItem("digitvilla_user");
     const userId = localStorage.getItem("digitvilla_userId");
 
-    if (!token || !user) return;
+    if (!token || !userRaw) return;
 
-    set({
-      isAuthenticated: true,
-      token,
-      user: JSON.parse(user),
-      userId,
-    });
+    try {
+      const user: User = JSON.parse(userRaw);
+      set({ isAuthenticated: true, token, user, userId });
+    } catch {
+      localStorage.removeItem("digitvilla_token");
+      localStorage.removeItem("digitvilla_user");
+      localStorage.removeItem("digitvilla_userId");
+    }
   },
 }));
