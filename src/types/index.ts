@@ -45,17 +45,15 @@ export interface Payment {
 
 export interface PaymentHistory extends Payment {}
 
+// ✅ FIXED: field names now match what ReceiptsController actually returns
 export interface Receipt {
   id: string
-  receiptNumber: string
-  userName: string
-  userId: string
-  plan: string
-  paidMonths: string[]
-  amount: number
-  paymentMode: string
   transactionId: string
-  date: string
+  amount: number
+  paidDate: string      // backend sends "paidDate" (mapped from IssuedAt)
+  paymentMethod: string
+  notes: string
+  userId: string
 }
 
 export interface Notice {
